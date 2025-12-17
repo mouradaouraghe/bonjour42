@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://spring-app-service/api";
+const API_URL = "http://172.189.157.245:31900/api";
 
 export const getAllProducts = () => {
   return axios.get(`${API_URL}/products`);
