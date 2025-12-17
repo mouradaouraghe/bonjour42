@@ -1,43 +1,32 @@
-# Build Stage
-FROM node:latest as build-stage
+# Étape 1 : build React
+FROM node:20-alpine as build
 
+# Créer le dossier de travail
 WORKDIR /app
 
-# Copy package.json and package-lock.json to the working directory
+# Copier package.json et package-lock.json
 COPY package*.json ./
 
-# Install dependencies
+# Installer les dépendances
 RUN npm install
 
-# Copy the rest of the application files to the working directory
+# Copier tout le code source
 COPY . .
 
-# Build the React application
+# Build de l'application React
 RUN npm run build
 
-# Production Stage
-FROM nginx:latest
+# Étape 2 : Serveur Nginx
+FROM nginx:alpine
 
-# Copy the NGINX configuration file
+# Copier le build React dans le dossier Nginx
+COPY --from=build /app/build /usr/share/nginx/html
+
+# Copier un fichier de configuration Nginx personnalisé (optionnel)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy the build artifacts from the build stage to NGINX web server
-COPY --from=build-stage /app/build/ /usr/share/nginx/html
-
-# We need to make sure not to run the container as a non root user
-# for better security
-WORKDIR /app
-RUN chown -R nginx:nginx /app && chmod -R 755 /app && \
-        chown -R nginx:nginx /var/cache/nginx && \
-        chown -R nginx:nginx /var/log/nginx && \
-        chown -R nginx:nginx /etc/nginx/conf.d
-RUN touch /var/run/nginx.pid && \
-        chown -R nginx:nginx /var/run/nginx.pid
-
-USER nginx
-
-# Expose port 80 for the NGINX server
+# Exposer le port 80
 EXPOSE 80
 
-# Command to start NGINX when the container is run
+# Commande par défaut
 CMD ["nginx", "-g", "daemon off;"]
